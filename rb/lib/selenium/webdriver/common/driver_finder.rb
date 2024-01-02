@@ -20,52 +20,57 @@
 module Selenium
   module WebDriver
     class DriverFinder
-      def self.results(options, klass)
-        path = klass.driver_path
-        path = path.call if path.is_a?(Proc)
+      class << self
+        def results(options, klass)
+          path = klass.driver_path
+          path = path.call if path.is_a?(Proc)
+          exe = klass::EXECUTABLE
 
-        results = if path
-                    {driver_path: path}
-                  else
-                    begin
-                      SeleniumManager.results(to_args(options))
-                    rescue StandardError => e
-                      raise Error::NoSuchDriverError,
-                            "Unable to obtain #{klass::EXECUTABLE} using Selenium Manager; #{e.message}"
-                    end
-                  end
-
-        begin
-          Platform.assert_executable(results[:driver_path])
-        rescue TypeError
-          raise Error::NoSuchDriverError, "Unable to locate or obtain #{klass::EXECUTABLE}"
-        rescue Error::WebDriverError => e
-          raise Error::NoSuchDriverError, "#{klass::EXECUTABLE} located, but: #{e.message}"
+          if path
+            validate_files(exe, driver_path: path)
+          else
+            begin
+              validate_files(exe, **SeleniumManager.results(to_args(options)))
+            rescue StandardError => e
+              raise Error::NoSuchDriverError("Unable to obtain #{exe} using Selenium Manager"), e.message, e.backtrace
+            end
+          end
         end
 
-        results
-      end
+        def path(options, klass)
+          WebDriver.logger.deprecate('`DriverFinder.path`', '`DriverFinder.results`', id: :driver_finder)
+          results(options, klass)[:driver_path]
+        end
 
-      def self.path(options, klass)
-        WebDriver.logger.deprecate('`DriverFinder.path`', '`DriverFinder.results`', id: :driver_finder)
-        results(options, klass)[:driver_path]
-      end
+        private
 
-      def self.to_args(options)
-        args = ['--browser', options.browser_name]
-        if options.browser_version
-          args << '--browser-version'
-          args << options.browser_version
+        def to_args(options)
+          args = ['--browser', options.browser_name]
+          if options.browser_version
+            args << '--browser-version'
+            args << options.browser_version
+          end
+          if options.respond_to?(:binary) && !options.binary.nil?
+            args << '--browser-path'
+            args << options.binary.gsub('\\', '\\\\\\')
+          end
+          if options.proxy
+            args << '--proxy'
+            args << (options.proxy.ssl || options.proxy.http)
+          end
+          args
         end
-        if options.respond_to?(:binary) && !options.binary.nil?
-          args << '--browser-path'
-          args << options.binary.gsub('\\', '\\\\\\')
+
+        def validate_files(exe, **opts)
+          opts.each_value do |value|
+            raise Error::NoSuchDriverError("Unable to locate or obtain #{exe})") if value.nil?
+
+            Platform.assert_executable(value)
+          rescue Error::WebDriverError => e
+            raise Error::NoSuchDriverError("#{exe} located, but has problems"), e.message, e.backtrace
+          end
+          opts
         end
-        if options.proxy
-          args << '--proxy'
-          args << (options.proxy.ssl || options.proxy.http)
-        end
-        args
       end
     end
   end

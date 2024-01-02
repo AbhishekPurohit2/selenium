@@ -42,11 +42,8 @@ module Selenium
           arguments << '--debug' if WebDriver.logger.debug?
           output = run(binary, *arguments)
 
-          browser_path = Platform.cygwin? ? Platform.cygwin_path(output['browser_path']) : output['browser_path']
-          driver_path = Platform.cygwin? ? Platform.cygwin_path(output['driver_path']) : output['driver_path']
-          Platform.assert_executable driver_path
-
-          {driver_path: driver_path, browser_path: browser_path}
+          {driver_path: Platform.cygwin? ? Platform.cygwin_path(output['driver_path']) : output['driver_path'],
+           browser_path: Platform.cygwin? ? Platform.cygwin_path(output['browser_path']) : output['browser_path']}
         end
 
         private
@@ -77,14 +74,12 @@ module Selenium
         end
 
         def validate_location(location)
+          raise Error::WebDriverError('Unable to locate or obtain Selenium Manager binary') if value.nil?
+
           begin
-            Platform.assert_file(location)
             Platform.assert_executable(location)
-          rescue TypeError
-            raise Error::WebDriverError,
-                  "Unable to locate or obtain Selenium Manager binary; #{location} is not a valid file object"
           rescue Error::WebDriverError => e
-            raise Error::WebDriverError, "Selenium Manager binary located, but #{e.message}"
+            raise Error::WebDriverError, "#{exe} located, but has problems: #{e.message}"
           end
 
           WebDriver.logger.debug("Selenium Manager binary found at #{location}", id: :selenium_manager)
