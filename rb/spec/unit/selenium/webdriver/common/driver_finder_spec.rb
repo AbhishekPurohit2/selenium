@@ -77,14 +77,14 @@ module Selenium
 
         described_class.results(options, Chrome::Service)
 
-        expect(SeleniumManager).to have_received(:results).with(['--browser',
-                                                                 options.browser_name,
-                                                                 '--browser-version',
-                                                                 options.browser_version,
-                                                                 '--browser-path',
-                                                                 options.binary,
-                                                                 '--proxy',
-                                                                 options.proxy.ssl])
+        expect(SeleniumManager).to have_received(:results).with('--browser',
+                                                                options.browser_name,
+                                                                '--browser-version',
+                                                                options.browser_version,
+                                                                '--browser-path',
+                                                                options.binary,
+                                                                '--proxy',
+                                                                options.proxy.ssl)
       end
     end
   end

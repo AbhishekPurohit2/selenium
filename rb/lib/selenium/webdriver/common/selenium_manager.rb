@@ -51,24 +51,10 @@ module Selenium
         # @return [String] the path to the correct selenium manager
         def binary
           @binary ||= begin
-            location = ENV.fetch('SE_MANAGER_PATH', nil)
-            if location
+            if (location = ENV.fetch('SE_MANAGER_PATH', nil))
               WebDriver.logger.debug("Selenium Manager set by ENV['SE_MANAGER_PATH']: #{location}")
             else
-              directory = File.expand_path(bin_path, __FILE__)
-              location = if Platform.windows?
-                           "#{directory}/windows/selenium-manager.exe"
-                         elsif Platform.mac?
-                           "#{directory}/macos/selenium-manager"
-                         elsif Platform.linux?
-                           "#{directory}/linux/selenium-manager"
-                         elsif Platform.unix?
-                           WebDriver.logger.warn('Selenium Manager binary may not be compatible with Unix',
-                                                 id: %i[selenium_manager unix_binary])
-                           "#{directory}/linux/selenium-manager"
-                         else
-                           raise Error::WebDriverError, "unsupported platform: #{Platform.os}"
-                         end
+              location = platform_location
               WebDriver.logger.debug("Looking for Selenium Manager at: #{location}")
             end
 
@@ -97,6 +83,23 @@ module Selenium
           return result unless status.exitstatus.positive?
 
           raise Error::WebDriverError, "Unsuccessful command executed: #{command}\n#{result}\n#{stderr}"
+        end
+
+        def platform_location
+          directory = File.expand_path(bin_path, __FILE__)
+          if Platform.windows?
+            "#{directory}/windows/selenium-manager.exe"
+          elsif Platform.mac?
+            "#{directory}/macos/selenium-manager"
+          elsif Platform.linux?
+            "#{directory}/linux/selenium-manager"
+          elsif Platform.unix?
+            WebDriver.logger.warn('Selenium Manager binary may not be compatible with Unix',
+                                  id: %i[selenium_manager unix_binary])
+            "#{directory}/linux/selenium-manager"
+          else
+            raise Error::WebDriverError, "unsupported platform: #{Platform.os}"
+          end
         end
       end
     end # SeleniumManager
