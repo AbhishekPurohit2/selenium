@@ -27,12 +27,14 @@ module Selenium
           exe = klass::EXECUTABLE
 
           if path
-            validate_files(exe, driver_path: path)
+            validate_files(driver_path: path)
           else
             begin
-              validate_files(exe, **SeleniumManager.results(to_args(options)))
+              validate_files(**SeleniumManager.results(to_args(options)))
             rescue StandardError => e
-              raise Error::NoSuchDriverError("Unable to obtain #{exe} using Selenium Manager"), e.message, e.backtrace
+              WebDriver.logger.error("Exception occurred: #{e.message}")
+              WebDriver.logger.error("Backtrace:\n\t#{e.backtrace&.join("\n\t")}")
+              raise Error::NoSuchDriverError, "Unable to obtain #{exe} using Selenium Manager"
             end
           end
         end
@@ -61,13 +63,9 @@ module Selenium
           args
         end
 
-        def validate_files(exe, **opts)
+        def validate_files(**opts)
           opts.each_value do |value|
-            raise Error::NoSuchDriverError("Unable to locate or obtain #{exe})") if value.nil?
-
             Platform.assert_executable(value)
-          rescue Error::WebDriverError => e
-            raise Error::NoSuchDriverError("#{exe} located, but has problems"), e.message, e.backtrace
           end
           opts
         end
