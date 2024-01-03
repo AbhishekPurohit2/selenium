@@ -79,7 +79,7 @@ module Selenium
           begin
             Platform.assert_executable(location)
           rescue Error::WebDriverError => e
-            raise Error::WebDriverError, "#{exe} located, but has problems: #{e.message}"
+            raise Error::WebDriverError, "Selenium Manager binary located, but has problems: #{e.message}"
           end
 
           WebDriver.logger.debug("Selenium Manager binary found at #{location}", id: :selenium_manager)
