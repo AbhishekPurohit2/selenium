@@ -30,7 +30,7 @@ module Selenium
             validate_files(driver_path: path)
           else
             begin
-              validate_files(**SeleniumManager.results(to_args(options)))
+              validate_files(**SeleniumManager.results(*to_args(options)))
             rescue StandardError => e
               WebDriver.logger.error("Exception occurred: #{e.message}")
               WebDriver.logger.error("Backtrace:\n\t#{e.backtrace&.join("\n\t")}")
